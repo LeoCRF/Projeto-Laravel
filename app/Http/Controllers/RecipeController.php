@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Recipe;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -30,6 +31,11 @@ class RecipeController extends Controller
             'description' => 'required',
             'ingredients' => 'required',
             'instructions' => 'required',
+            'prep_time' => 'nullable|integer|min:0',
+            'difficulty' => 'nullable|string',
+            'category' => 'nullable|string|max:255',
+            'sustainability_score' => 'nullable|integer|min:0|max:10',
+            'image' => 'nullable|image|max:2048',
         ]);
 
         $recipe = new Recipe($request->all());
@@ -42,7 +48,7 @@ class RecipeController extends Controller
 
         $recipe->save();
 
-        return redirect()->route('recipes.index')->with('Receita criada com sucesso!');
+        return redirect()->route('recipes.index')->with('success', 'Receita criada com sucesso!');
     }
 
     
@@ -60,14 +66,42 @@ class RecipeController extends Controller
     
     public function update(Request $request, Recipe $recipe)
     {
-        $recipe->update($request->all());
-        return redirect()->route('recipes.index')->with('Receita atualizada com sucesso!');  
-    }
+        $request->validate([
+            'title' => 'required',
+            'description' => 'required',
+            'ingredients' => 'required',
+            'instructions' => 'required',
+            'prep_time' => 'nullable|integer|min:0',
+            'difficulty' => 'nullable|string',
+            'category' => 'nullable|string|max:255',
+            'sustainability_score' => 'nullable|integer|min:0|max:10',
+            'image' => 'nullable|image|max:2048',
+        ]);
 
+        $recipe->fill($request->except('image'));
+
+        if ($request->hasFile('image')) {
+            if ($recipe->image && Storage::disk('public')->exists($recipe->image)) {
+                Storage::disk('public')->delete($recipe->image);
+            }
+
+            $path = $request->file('image')->store('recipes', 'public');
+            $recipe->image = $path;
+        }
+
+        $recipe->save();
+
+        return redirect()->route('recipes.index')->with('success', 'Receita atualizada com sucesso!');
+    }
     
     public function destroy(Recipe $recipe)
     {
+        if ($recipe->image && Storage::disk('public')->exists($recipe->image)) {
+            Storage::disk('public')->delete($recipe->image);
+        }
+
         $recipe->delete();
-        return redirect()->route('recipes.index')->with('Receita deletada com sucesso!');
+
+        return redirect()->route('recipes.index')->with('success', 'Receita deletada com sucesso!');
     }
 }

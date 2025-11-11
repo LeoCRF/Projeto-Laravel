@@ -15,13 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Autor da receita
             $table->string('title');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->text('ingredients');
             $table->text('instructions');
             $table->integer('prep_time')->nullable(); // em minutos
             $table->string('difficulty')->nullable(); // fácil, médio, difícil
             $table->string('category')->nullable();   // ex: sobremesa, prato principal
             $table->string('image')->nullable();      // caminho da imagem
+            $table->integer('sustainability_score')->nullable(); // pontuação de sustentabilidade
             $table->timestamps();
         });
     }
