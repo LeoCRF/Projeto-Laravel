@@ -5,20 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Recipe extends Model
+class Comment extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'title',
-        'description',
-        'ingredients',
-        'instructions',
-        'prep_time',
-        'difficulty',
-        'category',
-        'image',
+        'recipe_id',
+        'api_recipe_id',
+        'content',
+        'rating',
     ];
 
     public function user()
@@ -26,8 +22,8 @@ class Recipe extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function comments()
+    public function recipe()
     {
-        return $this->hasMany(Comment::class);
+        return $this->belongsTo(Recipe::class);
     }
 }

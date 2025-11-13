@@ -17,56 +17,47 @@
                     <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
                         {{-- Imagem com overlay --}}
                         <div class="relative h-80 bg-gradient-to-br from-indigo-600 to-purple-600 overflow-hidden group">
-                            @if ($recipe->image)
-                                <img src="{{ asset('storage/' . $recipe->image) }}" 
-                                     alt="{{ $recipe->title }}" 
+                            @if ($recipe['image'])
+                                <img src="{{ $recipe['image'] }}" 
+                                     alt="{{ $recipe['title'] }}" 
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-white text-lg">Sem imagem</div>
                             @endif
                             
-                            {{-- Badge de dificuldade --}}
-                            @if ($recipe->difficulty)
-                                <div class="absolute top-4 right-4">
-                                    <span class="inline-block px-4 py-2 bg-white/95 backdrop-blur rounded-full font-semibold text-sm text-indigo-600">
-                                        {{ $recipe->difficulty }}
-                                    </span>
-                                </div>
-                            @endif
+                            {{-- Badge API --}}
+                            <div class="absolute top-4 right-4">
+                                <span class="inline-block px-4 py-2 bg-blue-500/95 backdrop-blur rounded-full font-semibold text-sm text-white">
+                                    🌐 TheMealDB
+                                </span>
+                            </div>
                         </div>
 
                         {{-- Conteúdo --}}
                         <div class="p-8">
-                            <h1 class="text-4xl font-bold text-gray-900 mb-3">{{ $recipe->title }}</h1>
-                            <p class="text-gray-600 text-lg leading-relaxed mb-6">{{ $recipe->description }}</p>
+                            <h1 class="text-4xl font-bold text-gray-900 mb-3">{{ $recipe['title'] }}</h1>
+                            <p class="text-gray-600 text-lg leading-relaxed mb-6">{{ $recipe['description'] }}</p>
 
                             {{-- Metadados em cards --}}
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 -mx-2">
-                                @if ($recipe->prep_time)
-                                    <div class="px-2 py-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200 hover:border-orange-300 transition-colors">
-                                        <p class="text-xs text-orange-600 font-semibold uppercase tracking-wide">⏱️ Preparo</p>
-                                        <p class="text-xl font-bold text-orange-700 mt-1">{{ $recipe->prep_time }}min</p>
-                                    </div>
-                                @endif
-                                
-                                @if ($recipe->difficulty)
-                                    <div class="px-2 py-3 bg-gradient-to-br from-rose-50 to-rose-100 rounded-lg border border-rose-200 hover:border-rose-300 transition-colors">
-                                        <p class="text-xs text-rose-600 font-semibold uppercase tracking-wide">📊 Nível</p>
-                                        <p class="text-xl font-bold text-rose-700 mt-1">{{ $recipe->difficulty }}</p>
-                                    </div>
-                                @endif
-                                
-                                @if ($recipe->category)
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8 -mx-2">
+                                @if ($recipe['category'])
                                     <div class="px-2 py-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200 hover:border-emerald-300 transition-colors">
                                         <p class="text-xs text-emerald-600 font-semibold uppercase tracking-wide">🏷️ Categoria</p>
-                                        <p class="text-xl font-bold text-emerald-700 mt-1">{{ Str::limit($recipe->category, 12) }}</p>
+                                        <p class="text-xl font-bold text-emerald-700 mt-1">{{ Str::limit($recipe['category'], 15) }}</p>
                                     </div>
                                 @endif
                                 
-                                @if ($recipe->sustainability_score)
-                                    <div class="px-2 py-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 hover:border-green-300 transition-colors">
-                                        <p class="text-xs text-green-600 font-semibold uppercase tracking-wide">♻️ Sustent.</p>
-                                        <p class="text-xl font-bold text-green-700 mt-1">{{ $recipe->sustainability_score }}/10</p>
+                                @if (!empty($recipe['tags']))
+                                    <div class="px-2 py-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-colors">
+                                        <p class="text-xs text-purple-600 font-semibold uppercase tracking-wide">🏷️ Tags</p>
+                                        <p class="text-sm font-bold text-purple-700 mt-1">{{ implode(', ', array_slice($recipe['tags'], 0, 1)) }}</p>
+                                    </div>
+                                @endif
+
+                                @if ($recipe['youtube'])
+                                    <div class="px-2 py-3 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200 hover:border-red-300 transition-colors">
+                                        <p class="text-xs text-red-600 font-semibold uppercase tracking-wide">🎥 Vídeo</p>
+                                        <a href="{{ $recipe['youtube'] }}" target="_blank" class="text-lg font-bold text-red-700 mt-1 hover:underline">Ver</a>
                                     </div>
                                 @endif
                             </div>
@@ -80,13 +71,11 @@
                             <h2 class="text-3xl font-bold text-gray-900">Ingredientes</h2>
                         </div>
                         <ul class="space-y-3">
-                            @foreach (explode("\n", trim($recipe->ingredients)) as $ingredient)
-                                @if (trim($ingredient))
-                                    <li class="flex items-start group">
-                                        <span class="w-2 h-2 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                        <span class="text-gray-700 group-hover:text-gray-900 transition-colors">{{ trim($ingredient) }}</span>
-                                    </li>
-                                @endif
+                            @foreach ($recipe['ingredients'] as $ingredient)
+                                <li class="flex items-start group">
+                                    <span class="w-2 h-2 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                    <span class="text-gray-700 group-hover:text-gray-900 transition-colors">{{ $ingredient }}</span>
+                                </li>
                             @endforeach
                         </ul>
                     </div>
@@ -97,7 +86,7 @@
                             <div class="w-1.5 h-10 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full mr-4"></div>
                             <h2 class="text-3xl font-bold text-gray-900">Modo de Preparo</h2>
                         </div>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg">{{ $recipe->instructions }}</p>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg">{{ $recipe['instructions'] }}</p>
                     </div>
 
                     {{-- Comentários --}}
@@ -209,7 +198,7 @@
                                 <h3 class="text-lg font-bold text-gray-900 mb-4">Deixe sua avaliação</h3>
                                 <form method="POST" action="{{ route('comments.store') }}" class="comment-form space-y-4">
                                     @csrf
-                                    <input type="hidden" name="recipe_id" value="{{ $recipe->id }}">
+                                    <input type="hidden" name="api_recipe_id" value="{{ $recipe['id'] }}">
 
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Sua Avaliação *</label>
@@ -240,74 +229,44 @@
                         @endauth
                     </div>
 
-                <script>
-                    (function(){
-                        function initStarsInForm(form){
-                            const radios = Array.from(form.querySelectorAll('input[name="rating"]'));
-                            if(!radios.length) return;
+                    <script>
+                        (function(){
+                            function initStarsInForm(form){
+                                const radios = Array.from(form.querySelectorAll('input[name="rating"]'));
+                                if(!radios.length) return;
 
-                            const update = (val) => {
+                                const update = (val) => {
+                                    radios.forEach(r => {
+                                        const lab = r.closest('label');
+                                        const span = lab ? lab.querySelector('span') : r.nextElementSibling;
+                                        if(!span) return;
+                                        span.textContent = (Number(r.value) <= val) ? '★' : '☆';
+                                    });
+                                };
+
                                 radios.forEach(r => {
                                     const lab = r.closest('label');
-                                    const span = lab ? lab.querySelector('span') : r.nextElementSibling;
-                                    if(!span) return;
-                                    span.textContent = (Number(r.value) <= val) ? '★' : '☆';
-                                });
-                            };
-
-                            radios.forEach(r => {
-                                // ensure clicking label sets the radio and triggers change
-                                const lab = r.closest('label');
-                                if(lab){
-                                    lab.addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        r.checked = true;
-                                        r.dispatchEvent(new Event('change', {bubbles:true}));
+                                    if(lab){
+                                        lab.addEventListener('click', (e) => {
+                                            e.preventDefault();
+                                            r.checked = true;
+                                            r.dispatchEvent(new Event('change', {bubbles:true}));
+                                        });
+                                    }
+                                    r.addEventListener('change', (e) => {
+                                        update(Number(e.target.value));
                                     });
-                                }
-
-                                r.addEventListener('change', (e) => {
-                                    update(Number(e.target.value));
                                 });
-                            });
 
-                            // initialize from checked
-                            const checked = radios.find(r => r.checked);
-                            if(checked){
-                                update(Number(checked.value));
+                                const checked = radios.find(r => r.checked);
+                                if(checked){
+                                    update(Number(checked.value));
+                                }
                             }
-                        }
 
-                        document.querySelectorAll('.comment-form, .comment-edit-form').forEach(f => initStarsInForm(f));
-                    })();
-                </script>
-
-                    {{-- Ações (editar/excluir) --}}
-                    @if (Auth::id() === $recipe->user_id)
-                        <div class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300">
-                            <div class="flex items-center mb-6">
-                                <div class="w-1.5 h-10 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full mr-4"></div>
-                                <h3 class="text-xl font-bold text-gray-900">Gerenciar Receita</h3>
-                            </div>
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <a href="{{ route('recipes.edit', $recipe) }}" 
-                                   class="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 hover:from-yellow-600 hover:to-yellow-700 text-center">
-                                    ✏️ Editar Receita
-                                </a>
-
-                                <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" 
-                                      onsubmit="return confirm('Tem certeza? Esta ação não pode ser desfeita.');"
-                                      class="flex-1">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                            class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700">
-                                        🗑️ Excluir Receita
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    @endif
+                            document.querySelectorAll('.comment-form, .comment-edit-form').forEach(f => initStarsInForm(f));
+                        })();
+                    </script>
                 </div>
 
                 {{-- Sidebar com recomendações (1 coluna) --}}

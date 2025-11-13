@@ -7,13 +7,11 @@
 
     <div class="py-6">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow rounded-lg p-6">
-
-                {{-- Mensagens de erro --}}
+            <div class="bg-white p-6 shadow rounded-lg">
+                {{-- Mensagem de erro --}}
                 @if ($errors->any())
-                    <div class="mb-4 p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg">
-                        <strong>Erro:</strong> Por favor, corrija os campos abaixo.
-                        <ul class="mt-2 list-disc list-inside">
+                    <div class="mb-4 p-4 text-red-800 bg-red-100 border border-red-300 rounded-lg">
+                        <ul class="list-disc ml-5">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -21,75 +19,90 @@
                     </div>
                 @endif
 
-                <form action="{{ route('recipes.store') }}" method="POST" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('recipes.store') }}" enctype="multipart/form-data">
                     @csrf
 
                     {{-- Título --}}
                     <div class="mb-4">
-                        <x-input-label for="title" :value="__('Título')" />
-                        <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" value="{{ old('title') }}" required />
+                        <label class="block text-gray-700 font-semibold mb-2">Título</label>
+                        <input type="text" name="title" value="{{ old('title') }}" 
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">
                     </div>
 
                     {{-- Descrição --}}
                     <div class="mb-4">
-                        <x-input-label for="description" :value="__('Descrição')" />
-                        <textarea id="description" name="description" rows="3" class="w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('description') }}</textarea>
+                        <label class="block text-gray-700 font-semibold mb-2">Descrição</label>
+                        <textarea name="description" rows="3" 
+                                    class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">{{ old('description') }}</textarea>
                     </div>
 
                     {{-- Ingredientes --}}
                     <div class="mb-4">
-                        <x-input-label for="ingredients" :value="__('Ingredientes')" />
-                        <textarea id="ingredients" name="ingredients" rows="3" class="w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>{{ old('ingredients') }}</textarea>
+                        <label class="block text-gray-700 font-semibold mb-2">Ingredientes</label>
+                        <textarea name="ingredients" rows="3" 
+                                    class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">{{ old('ingredients') }}</textarea>
                     </div>
 
-                    {{-- Modo de Preparo --}}
+                    {{-- Instruções --}}
                     <div class="mb-4">
-                        <x-input-label for="instructions" :value="__('Modo de Preparo')" />
-                        <textarea id="instructions" name="instructions" rows="4" class="w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>{{ old('instructions') }}</textarea>
+                        <label class="block text-gray-700 font-semibold mb-2">Instruções</label>
+                        <textarea name="instructions" rows="3" 
+                                    class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">{{ old('instructions') }}</textarea>
                     </div>
 
-                    {{-- Tempo de preparo --}}
+                    {{-- Tempo de Preparo --}}
                     <div class="mb-4">
-                        <x-input-label for="prep_time" :value="__('Tempo de Preparo (minutos)')" />
-                        <x-text-input id="prep_time" class="block mt-1 w-full" type="number" name="prep_time" value="{{ old('prep_time') }}" />
+                        <label class="block text-gray-700 font-semibold mb-2">Tempo de Preparo (minutos)</label>
+                        <input type="number" name="prep_time" value="{{ old('prep_time') }}" 
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">
                     </div>
 
                     {{-- Dificuldade --}}
                     <div class="mb-4">
-                        <x-input-label for="difficulty" :value="__('Dificuldade')" />
-                        <select id="difficulty" name="difficulty" class="block w-full mt-1 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Selecione...</option>
-                            <option value="fácil" {{ old('difficulty') == 'fácil' ? 'selected' : '' }}>Fácil</option>
-                            <option value="médio" {{ old('difficulty') == 'médio' ? 'selected' : '' }}>Médio</option>
-                            <option value="difícil" {{ old('difficulty') == 'difícil' ? 'selected' : '' }}>Difícil</option>
+                        <label class="block text-gray-700 font-semibold mb-2">Dificuldade</label>
+                        <select name="difficulty" 
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">
+                            <option value="">Selecione uma dificuldade</option>
+                            <option value="Fácil" {{ old('difficulty') == 'Fácil' ? 'selected' : '' }}>Fácil</option>
+                            <option value="Média" {{ old('difficulty') == 'Média' ? 'selected' : '' }}>Média</option>
+                            <option value="Difícil" {{ old('difficulty') == 'Difícil' ? 'selected' : '' }}>Difícil</option>
                         </select>
                     </div>
 
                     {{-- Categoria --}}
                     <div class="mb-4">
-                        <x-input-label for="category" :value="__('Categoria')" />
-                        <x-text-input id="category" class="block mt-1 w-full" type="text" name="category" value="{{ old('category') }}" />
+                        <label class="block text-gray-700 font-semibold mb-2">Categoria</label>
+                        <input type="text" name="category" value="{{ old('category') }}" 
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200"
+                                placeholder="Ex: Sobremesa, Prato Principal, etc">
+                    </div>
+
+                    {{-- Pontuação de Sustentabilidade --}}
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Pontuação de Sustentabilidade (0-10)</label>
+                        <input type="number" name="sustainability_score" value="{{ old('sustainability_score') }}" 
+                                min="0" max="10"
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">
                     </div>
 
                     {{-- Imagem --}}
                     <div class="mb-4">
-                        <x-input-label for="image" :value="__('Imagem da Receita')" />
-                        <input id="image" type="file" name="image" class="block mt-1 w-full text-sm text-gray-700" accept="image/*">
-                    </div>
-
-                    {{-- Pontuação de sustentabilidade --}}
-                    <div class="mb-4">
-                        <x-input-label for="sustainability_score" :value="__('Pontuação de Sustentabilidade (0-10)')" />
-                        <x-text-input id="sustainability_score" class="block mt-1 w-full" type="number" name="sustainability_score" min="0" max="10" value="{{ old('sustainability_score') }}" />
+                        <label class="block text-gray-700 font-semibold mb-2">Imagem</label>
+                        <input type="file" name="image" 
+                                class="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring focus:ring-indigo-200">
                     </div>
 
                     {{-- Botões --}}
-                    <div class="flex justify-between mt-6">
-                        <a href="{{ route('recipes.index') }}" class="text-gray-600 hover:underline">Voltar</a>
+                    <div class="flex justify-end space-x-3">
+                        <a href="{{ route('recipes.index') }}" 
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">
+                            Cancelar
+                        </a>
 
-                        <x-primary-button>
-                            {{ __('Salvar Receita') }}
-                        </x-primary-button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
+                            Salvar Receita
+                        </button>
                     </div>
                 </form>
             </div>
