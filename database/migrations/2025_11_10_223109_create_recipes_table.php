@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('difficulty')->nullable(); // fácil, médio, difícil
             $table->string('category')->nullable();   // ex: sobremesa, prato principal
             $table->string('image')->nullable();      // caminho da imagem
-            $table->integer('sustainability_score')->nullable(); // pontuação de sustentabilidade
             $table->timestamps();
         });
     }

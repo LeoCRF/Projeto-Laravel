@@ -34,7 +34,7 @@ class RecipeController extends Controller
         // Receitas do banco
         $recipes = $query->latest()->paginate(6)->withQueryString();
 
-        // 🔥 Receitas da API
+        // Receitas da API
         $apiRecipes = Cache::remember('api_recipes_list', 60 * 24, function () {
             try {
                 $response = Http::get('https://www.themealdb.com/api/json/v1/1/search.php?s=');

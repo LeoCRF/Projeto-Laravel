@@ -35,7 +35,7 @@
                     <a href="{{ route('recipes.show', $recipe->id) }}">
                         <div class="h-56 w-full overflow-hidden rounded-t-3xl">
                             <img src="{{ asset('storage/' . $recipe->image) ?? '' }}"
-                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                         </div>
 
                         <div class="p-6">
@@ -57,8 +57,8 @@
                         @if(Auth::id() === $recipe->user_id)
                             <div class="absolute top-3 right-3 flex gap-2">
                                 <a href="{{ route('recipes.edit', $recipe->id) }}"
-                                   class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition">
-                                   Editar
+                                class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition">
+                                Editar
                                 </a>
                                 <form action="{{ route('recipes.destroy', $recipe->id) }}" method="POST">
                                     @csrf
@@ -86,11 +86,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-10">
             @foreach ($apiRecipes as $recipe)
                 <a href="{{ route('api-recipes.show', $recipe['id']) }}"
-                   class="group relative bg-zinc-800/40 rounded-3xl overflow-hidden border border-zinc-700 hover:border-blue-500 transition-all duration-300 shadow-lg hover:shadow-blue-600/30">
+                class="group relative bg-zinc-800/40 rounded-3xl overflow-hidden border border-zinc-700 hover:border-blue-500 transition-all duration-300 shadow-lg hover:shadow-blue-600/30">
 
                     <div class="h-56 w-full overflow-hidden rounded-t-3xl">
                         <img src="{{ $recipe['image'] ?? '' }}"
-                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     </div>
 
                     <div class="p-6">
