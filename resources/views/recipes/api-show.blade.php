@@ -9,9 +9,9 @@
     <div class="text-center">
         <h1 class="text-3xl font-bold mb-4">{{ $recipe->title }}</h1>
         @if($recipe->image)
-            <img src="{{ asset('storage/' . $recipe->image) }}" alt="{{ $recipe->title }}" class="mx-auto rounded-lg shadow-md max-h-96 object-cover">
+            <img src="{{ $recipe->image && str_starts_with($recipe->image, 'http') ? $recipe->image : asset('storage/' . $recipe->image) }}" alt="{{ $recipe->title }}" class="mx-auto rounded-lg shadow-md max-h-96 object-cover">
         @endif
-        @if($recipe->category)
+        @if(isset($recipe->category))
             <p class="text-emerald-500 font-semibold mt-2">{{ $recipe->category }}</p>
         @endif
     </div>
@@ -19,10 +19,8 @@
     {{-- Avaliação média --}}
     <div class="flex items-center justify-center space-x-2">
         @php
-            $comments = $recipe->comments ?? [];
-            $avgRating = count($comments) > 0 ? round(collect($comments)->avg('rating'), 1) : null;
+            $avgRating = count($comments) > 0 ? round($comments->avg('rating'), 1) : null;
         @endphp
-
         @if($avgRating)
             <div class="flex items-center">
                 @for($i = 1; $i <= 5; $i++)
@@ -40,18 +38,34 @@
     {{-- Ingredientes --}}
     <div>
         <h2 class="text-2xl font-semibold mb-2">Ingredientes</h2>
-        <p class="text-gray-700">{{ $recipe->ingredients }}</p>
+        @if(is_array($recipe->ingredients))
+            <ul class="list-disc list-inside text-gray-700">
+                @foreach($recipe->ingredients as $ingredient)
+                    <li>{{ $ingredient }}</li>
+                @endforeach
+            </ul>
+        @else
+            <p class="text-gray-700">{{ $recipe->ingredients }}</p>
+        @endif
     </div>
 
     {{-- Modo de Preparo --}}
     <div>
         <h2 class="text-2xl font-semibold mb-2">Modo de preparo</h2>
-        <p class="text-gray-700">{{ $recipe->instructions }}</p>
+        @if(is_array($recipe->instructions))
+            <ol class="list-decimal list-inside text-gray-700">
+                @foreach($recipe->instructions as $step)
+                    <li>{{ $step }}</li>
+                @endforeach
+            </ol>
+        @else
+            <p class="text-gray-700">{{ $recipe->instructions }}</p>
+        @endif
     </div>
 
-    {{-- Botões Editar/Excluir --}}
+    {{-- Botões Editar/Excluir receita --}}
     @auth
-        @if(Auth::id() === $recipe->user_id)
+        @if(isset($recipe->user_id) && Auth::id() === $recipe->user_id)
             <div class="flex gap-2 mt-4">
                 <a href="{{ route('recipes.edit', $recipe->id) }}" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition">Editar</a>
                 <form action="{{ route('recipes.destroy', $recipe->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
@@ -70,16 +84,32 @@
             <div class="border p-4 rounded-md mb-2 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <span class="font-medium">{{ $comment->user->name ?? 'Usuário' }}</span>
-                    @if($comment->rating)
-                        <div class="flex">
-                            @for($i = 1; $i <= 5; $i++)
-                                <svg class="w-4 h-4 {{ $i <= $comment->rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
-                                </svg>
-                            @endfor
-                        </div>
-                    @endif
+
+                    {{-- Botões Editar/Excluir comentário --}}
+                    @auth
+                        @if(Auth::id() === $comment->user_id)
+                            <div class="flex gap-2">
+                                <a href="{{ route('comments.edit', $comment->id) }}" class="text-blue-500 hover:underline">Editar</a>
+                                <form action="{{ route('comments.destroy', $comment->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:underline">Excluir</button>
+                                </form>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
+
+                @if($comment->rating)
+                    <div class="flex mt-1">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg class="w-4 h-4 {{ $i <= $comment->rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
+                            </svg>
+                        @endfor
+                    </div>
+                @endif
+
                 <p class="mt-1 text-gray-700">{{ $comment->content }}</p>
             </div>
         @empty
@@ -93,7 +123,8 @@
             <h2 class="text-2xl font-semibold mb-2">Deixe seu comentário</h2>
             <form action="{{ route('comments.store') }}" method="POST" class="space-y-4">
                 @csrf
-                <input type="hidden" name="recipe_id" value="{{ $recipe->id }}">
+                <input type="hidden" name="recipe_id" value="{{ isset($recipe->user_id) ? $recipe->id : '' }}">
+                <input type="hidden" name="api_recipe_id" value="{{ isset($recipe->user_id) ? '' : $recipe->id }}">
 
                 {{-- Estrelas interativas --}}
                 <div class="flex items-center gap-2">
@@ -108,10 +139,8 @@
                     <input type="hidden" name="rating" id="rating-input" value="">
                 </div>
 
-                {{-- Conteúdo do comentário --}}
                 <textarea name="content" rows="3" class="w-full border rounded-md p-2" placeholder="Escreva seu comentário"></textarea>
 
-                {{-- Botão --}}
                 <button type="submit" class="px-4 py-2 bg-yellow-400 text-white rounded-md hover:bg-yellow-500 transition">
                     Enviar
                 </button>
@@ -129,16 +158,14 @@ const input = document.getElementById('rating-input');
 
 stars.forEach(star => {
     star.addEventListener('mouseover', () => {
-        const value = parseInt(star.dataset.value);
-        highlightStars(value);
+        highlightStars(parseInt(star.dataset.value));
     });
     star.addEventListener('mouseout', () => {
         highlightStars(parseInt(input.value) || 0);
     });
     star.addEventListener('click', () => {
-        const value = parseInt(star.dataset.value);
-        input.value = value;
-        highlightStars(value);
+        input.value = parseInt(star.dataset.value);
+        highlightStars(parseInt(input.value));
     });
 });
 

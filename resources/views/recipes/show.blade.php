@@ -13,24 +13,18 @@
 
     {{-- Tempo de preparo, dificuldade e sustentabilidade --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 text-gray-700 font-medium">
-
-        {{-- Tempo de preparo --}}
         <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a8 8 0 11-8 8 8 8 0 018-8zm1 9H9V5h2v6z"/>
             </svg>
             <span>{{ $recipe->prep_time ?? 'Não informado' }} min</span>
         </div>
-
-        {{-- Dificuldade --}}
         <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a8 8 0 11-8 8 8 8 0 018-8zm1 11H9v-2h2v2z"/>
             </svg>
             <span>{{ $recipe->difficulty ?? 'Não informada' }}</span>
         </div>
-
-        {{-- Sustentabilidade --}}
         @if(!is_null($recipe->sustainability_score))
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -39,7 +33,6 @@
                 <span>{{ $recipe->sustainability_score }}/10 Sustentável</span>
             </div>
         @endif
-
     </div>
 
     {{-- Ingredientes --}}
@@ -73,16 +66,33 @@
             <div class="border p-4 rounded-md mb-2 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <span class="font-medium">{{ $comment->user->name ?? 'Usuário' }}</span>
-                    @if($comment->rating)
-                        <div class="flex">
-                            @for($i = 1; $i <= 5; $i++)
-                                <svg class="w-4 h-4 {{ $i <= $comment->rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
-                                </svg>
-                            @endfor
-                        </div>
-                    @endif
+
+                    {{-- Botões Editar/Excluir apenas se for o dono do comentário --}}
+                    @auth
+                        @if(Auth::id() === $comment->user_id)
+                            <div class="flex gap-2">
+                                <a href="{{ route('comments.edit', $comment->id) }}" class="text-blue-500 hover:underline">Editar</a>
+                                <form action="{{ route('comments.destroy', $comment->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:underline">Excluir</button>
+                                </form>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
+
+                {{-- Avaliação --}}
+                @if($comment->rating)
+                    <div class="flex mt-1">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg class="w-4 h-4 {{ $i <= $comment->rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
+                            </svg>
+                        @endfor
+                    </div>
+                @endif
+
                 <p class="mt-1 text-gray-700">{{ $comment->content }}</p>
             </div>
         @empty
@@ -111,10 +121,8 @@
                     <input type="hidden" name="rating" id="rating-input" value="">
                 </div>
 
-                {{-- Conteúdo do comentário --}}
                 <textarea name="content" rows="3" class="w-full border rounded-md p-2" placeholder="Escreva seu comentário"></textarea>
 
-                {{-- Botão --}}
                 <button type="submit" class="px-4 py-2 bg-yellow-400 text-white rounded-md hover:bg-yellow-500 transition">
                     Enviar
                 </button>
@@ -132,16 +140,14 @@ const input = document.getElementById('rating-input');
 
 stars.forEach(star => {
     star.addEventListener('mouseover', () => {
-        const value = parseInt(star.dataset.value);
-        highlightStars(value);
+        highlightStars(parseInt(star.dataset.value));
     });
     star.addEventListener('mouseout', () => {
-        highlightStars(parseInt(input.value));
+        highlightStars(parseInt(input.value) || 0);
     });
     star.addEventListener('click', () => {
-        const value = parseInt(star.dataset.value);
-        input.value = value;
-        highlightStars(value);
+        input.value = parseInt(star.dataset.value);
+        highlightStars(parseInt(input.value));
     });
 });
 
