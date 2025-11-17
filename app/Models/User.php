@@ -2,21 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+// Importações necessárias
+use App\Models\Recipe;
+use App\Models\Comment;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+/**
+ * @property-read Collection|Recipe[] $recipes
+ * @property-read Collection|Recipe[] $likes
+ * @property-read Collection|Recipe[] $saved_recipes
+ */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -24,31 +29,45 @@ class User extends Authenticatable
         'avatar',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Receitas criadas pelo usuário (1 para muitos).
      */
-    protected function casts(): array
+    public function recipes(): HasMany
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Recipe::class);
     }
 
-    public function comments()
+    /**
+     * Comentários escritos pelo usuário.
+     */
+    public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Receitas curtidas pelo usuário (many-to-many).
+     */
+    public function likes(): BelongsToMany
+    {
+        return $this->belongsToMany(Recipe::class, 'recipe_user_likes')->withTimestamps();
+    }
+
+    /**
+     * Receitas salvas pelo usuário (many-to-many).
+     */
+    public function saved_recipes(): BelongsToMany
+    {
+        return $this->belongsToMany(Recipe::class, 'recipe_user_saves')->withTimestamps();
     }
 }

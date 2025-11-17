@@ -11,20 +11,35 @@
         @endif
     </div>
 
-    {{-- Tempo de preparo, dificuldade e sustentabilidade --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 text-gray-700 font-medium">
+    {{-- Tempo de preparo, dificuldade, sustentabilidade e categoria --}}
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4 text-gray-700 font-medium">
+        {{-- Tempo de preparo --}}
         <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a8 8 0 11-8 8 8 8 0 018-8zm1 9H9V5h2v6z"/>
             </svg>
             <span>{{ $recipe->prep_time ?? 'Não informado' }} min</span>
         </div>
+
+        {{-- Dificuldade --}}
         <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a8 8 0 11-8 8 8 8 0 018-8zm1 11H9v-2h2v2z"/>
             </svg>
             <span>{{ $recipe->difficulty ?? 'Não informada' }}</span>
         </div>
+
+        {{-- Categoria --}}
+        @if($recipe->category)
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm0 2v10h12V5H4z"/>
+                </svg>
+                <span>{{ $recipe->category }}</span>
+            </div>
+        @endif
+
+        {{-- Sustentabilidade --}}
         @if(!is_null($recipe->sustainability_score))
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -34,6 +49,77 @@
             </div>
         @endif
     </div>
+
+    {{-- Botões Curtir e Salvar --}}
+@auth
+<div class="flex gap-4 mt-4">
+
+    {{-- Curtir --}}
+    <button id="like-btn" data-id="{{ $recipe->id }}" class="flex items-center gap-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" 
+             fill="{{ $liked ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+        </svg>
+        <span id="likes-count">{{ $recipe->likedByUsers()->count() }}</span> Curtir
+    </button>
+
+    {{-- Salvar --}}
+    <button id="save-btn" data-id="{{ $recipe->id }}" class="flex items-center gap-1 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" 
+             fill="{{ $saved ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5z" />
+        </svg>
+        <span>{{ $saved ? 'Salvo' : 'Salvar' }}</span>
+    </button>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const likeBtn = document.getElementById('like-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const likesCount = document.getElementById('likes-count');
+
+    // Curtir/descurtir
+    likeBtn.addEventListener('click', function () {
+        const recipeId = this.dataset.id;
+
+        fetch(`/recipes/${recipeId}/like`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Atualiza cor do SVG e contador
+            likeBtn.querySelector('svg').setAttribute('fill', data.status === 'liked' ? 'currentColor' : 'none');
+            likesCount.textContent = data.likes_count;
+        });
+    });
+
+    // Salvar/unsave
+    saveBtn.addEventListener('click', function () {
+        const recipeId = this.dataset.id;
+
+        fetch(`/recipes/${recipeId}/save`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            saveBtn.querySelector('svg').setAttribute('fill', data.status === 'saved' ? 'currentColor' : 'none');
+            saveBtn.querySelector('span').textContent = data.status === 'saved' ? 'Salvo' : 'Salvar';
+        });
+    });
+});
+</script>
+@endauth
+
 
     {{-- Ingredientes --}}
     <div>
@@ -66,7 +152,6 @@
             <div class="border p-4 rounded-md mb-2 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <span class="font-medium">{{ $comment->user->name ?? 'Usuário' }}</span>
-
                     {{-- Botões Editar/Excluir apenas se for o dono do comentário --}}
                     @auth
                         @if(Auth::id() === $comment->user_id)

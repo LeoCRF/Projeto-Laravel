@@ -73,13 +73,6 @@
             </select>
         </div>
 
-        <!-- Pontuação de Sustentabilidade -->
-        <div class="mb-6">
-            <label for="sustainability_score" class="block text-white font-semibold mb-2">Pontuação de Sustentabilidade (0 a 10)</label>
-            <input type="number" name="sustainability_score" id="sustainability_score" min="0" max="10" value="{{ old('sustainability_score') }}"
-                   class="w-full px-4 py-2 rounded-lg bg-zinc-900 text-white border border-zinc-600 focus:border-emerald-500 focus:outline-none">
-        </div>
-
         <!-- Imagem -->
         <div class="mb-6">
             <label for="image" class="block text-white font-semibold mb-2">Imagem</label>

@@ -16,7 +16,7 @@ class RecipeController extends Controller
     {
         $query = Recipe::query();
 
-        // busca por termo (título, descrição, ingredientes)
+        // Busca por termo (título, descrição, ingredientes)
         if ($request->filled('q')) {
             $q = $request->get('q');
             $query->where(function ($sub) use ($q) {
@@ -26,7 +26,7 @@ class RecipeController extends Controller
             });
         }
 
-        // filtrar só as minhas receitas
+        // Filtrar só as minhas receitas
         if ($request->get('mine') == 1 && Auth::check()) {
             $query->where('user_id', Auth::id());
         }
@@ -34,15 +34,13 @@ class RecipeController extends Controller
         // Receitas do banco
         $recipes = $query->latest()->paginate(6)->withQueryString();
 
-        // 🔥 API SEMPRE
+        // 🔥 Receitas da API
         $apiRecipes = Cache::remember('api_recipes_list', 60 * 24, function () {
             try {
                 $response = Http::get('https://www.themealdb.com/api/json/v1/1/search.php?s=');
 
                 if ($response->successful() && $response->json()['meals']) {
-
                     return collect($response->json()['meals'])->map(function ($meal) {
-
                         $ingredients = collect(range(1, 20))->map(function ($i) use ($meal) {
                             $ingredient = $meal["strIngredient{$i}"] ?? '';
                             $measure = $meal["strMeasure{$i}"] ?? '';
@@ -51,13 +49,13 @@ class RecipeController extends Controller
 
                         return [
                             'id' => $meal['idMeal'],
-                            'title' => $meal['strMeal'], // Mantém em inglês
-                            'description' => substr($meal['strInstructions'], 0, 100), // Mantém em inglês
+                            'title' => $meal['strMeal'],
+                            'description' => substr($meal['strInstructions'], 0, 100),
                             'ingredients' => $ingredients,
                             'instructions' => $meal['strInstructions'],
                             'prep_time' => null,
                             'difficulty' => null,
-                            'category' => $meal['strCategory'], // Mantém em inglês
+                            'category' => $meal['strCategory'],
                             'sustainability_score' => null,
                             'image' => $meal['strMealThumb'],
                             'user_id' => null,
@@ -117,22 +115,22 @@ class RecipeController extends Controller
             ->limit(4)
             ->get();
 
-        return view('recipes.show', compact('recipe', 'comments', 'recommended'));
+        $user = Auth::user();
+        $liked = $user ? $recipe->likedByUsers()->where('user_id', $user->id)->exists() : false;
+        $saved = $user ? $recipe->savedByUsers()->where('user_id', $user->id)->exists() : false;
+
+        return view('recipes.show', compact('recipe', 'comments', 'recommended', 'liked', 'saved'));
     }
 
     public function edit(Recipe $recipe)
     {
-        if (Auth::id() !== $recipe->user_id) {
-            abort(403, 'Você não tem permissão para editar esta receita.');
-        }
+        $this->authorizeUser($recipe);
         return view('recipes.edit', compact('recipe'));
     }
 
     public function update(Request $request, Recipe $recipe)
     {
-        if (Auth::id() !== $recipe->user_id) {
-            abort(403, 'Você não tem permissão para editar esta receita.');
-        }
+        $this->authorizeUser($recipe);
 
         $request->validate([
             'title' => 'required',
@@ -152,7 +150,6 @@ class RecipeController extends Controller
             if ($recipe->image && Storage::disk('public')->exists($recipe->image)) {
                 Storage::disk('public')->delete($recipe->image);
             }
-
             $path = $request->file('image')->store('recipes', 'public');
             $recipe->image = $path;
         }
@@ -164,9 +161,7 @@ class RecipeController extends Controller
 
     public function destroy(Recipe $recipe)
     {
-        if (Auth::id() !== $recipe->user_id) {
-            abort(403, 'Você não tem permissão para excluir esta receita.');
-        }
+        $this->authorizeUser($recipe);
 
         if ($recipe->image && Storage::disk('public')->exists($recipe->image)) {
             Storage::disk('public')->delete($recipe->image);
@@ -175,5 +170,50 @@ class RecipeController extends Controller
         $recipe->delete();
 
         return redirect()->route('recipes.index')->with('success', 'Receita deletada com sucesso!');
+    }
+
+    // ======== NOVOS MÉTODOS ========
+
+    public function toggleLike(Recipe $recipe)
+    {
+        $user = Auth::user();
+
+        if ($recipe->likedByUsers()->where('user_id', $user->id)->exists()) {
+            $recipe->likedByUsers()->detach($user->id);
+            $status = 'unliked';
+        } else {
+            $recipe->likedByUsers()->attach($user->id);
+            $status = 'liked';
+        }
+
+        return response()->json([
+            'status' => $status,
+            'likes_count' => $recipe->likedByUsers()->count(),
+        ]);
+    }
+
+    public function toggleSave(Recipe $recipe)
+    {
+        $user = Auth::user();
+
+        if ($recipe->savedByUsers()->where('user_id', $user->id)->exists()) {
+            $recipe->savedByUsers()->detach($user->id);
+            $status = 'unsaved';
+        } else {
+            $recipe->savedByUsers()->attach($user->id);
+            $status = 'saved';
+        }
+
+        return response()->json([
+            'status' => $status,
+        ]);
+    }
+
+    // ======== MÉTODO AUXILIAR ========
+    private function authorizeUser(Recipe $recipe)
+    {
+        if (Auth::id() !== $recipe->user_id) {
+            abort(403, 'Você não tem permissão para editar ou excluir esta receita.');
+        }
     }
 }

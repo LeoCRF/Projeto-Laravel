@@ -4,18 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\RedirectResponse;
 use Intervention\Image\Facades\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+use App\Models\Recipe;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
+    public function show(): View
+    {
+        $user = Auth::user();
+
+        return view('profile.profile', [
+            'user' => $user,
+            'myRecipes' => $user->recipes()->latest()->get(),
+            'likedRecipes' => $user->likes()->latest()->get(),
+            'savedRecipes' => $user->saved_recipes()->latest()->get(),
+        ]);
+    }
+
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -23,44 +33,43 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request)
     {
         $user = $request->user();
-
         $data = $request->validated();
 
-        // tratar upload de avatar separadamente (redimensionar e otimizar)
+        // Avatar upload
         if ($request->hasFile('avatar')) {
-            // remover avatar antigo se existir
+
+            // Delete old avatar
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
 
-            $uploaded = $request->file('avatar');
-            // gerar nome único e forçar jpg
-            $filename = 'avatars/' . $user->id . '_' . time() . '.jpg';
+            $file = $request->file('avatar');
+            $filename = "avatars/{$user->id}_" . time() . ".jpg";
 
-            // tentar usar Intervention Image para redimensionar e otimizar
             try {
-                $img = Image::make($uploaded->getPathname())
+                $image = Image::make($file->getPathname())
+                    ->resize(600, null, function ($c) {
+                        $c->aspectRatio();
+                        $c->upsize();
+                    })
                     ->fit(200, 200)
                     ->encode('jpg', 80);
 
-                Storage::disk('public')->put($filename, (string) $img);
-                $data['avatar'] = $filename;
-            } catch (\Throwable $e) {
-                // se houver qualquer falha (ex.: driver GD/Imagick ausente), fallback para salvar o arquivo original
-                // registrar o erro para debug
-                \Illuminate\Support\Facades\Log::error('Avatar processing failed: ' . $e->getMessage());
+                Storage::disk('public')->put($filename, (string)$image);
 
-                $path = $uploaded->store('avatars', 'public');
-                $data['avatar'] = $path;
+                $data['avatar'] = $filename;
+
+            } catch (\Throwable $e) {
+                Log::error("Avatar processing failed: {$e->getMessage()}");
+
+                $data['avatar'] = $file->store('avatars', 'public');
             }
         }
 
+        // Update
         $user->fill($data);
 
         if ($user->isDirty('email')) {
@@ -72,10 +81,7 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],

@@ -29,8 +29,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/recipes/{recipe}', [RecipeController::class, 'update'])->name('recipes.update');
     Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
 
+    // Curtir e salvar receitas
+    Route::post('/recipes/{recipe}/like', [RecipeController::class, 'like'])->name('recipes.like');
+    Route::post('/recipes/{recipe}/save', [RecipeController::class, 'save'])->name('recipes.save');
+
     // Perfil do usuário
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
@@ -38,13 +43,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/comments', function () {
         return redirect()->route('recipes.index');
     })->name('comments.index');
+
     Route::post('/comments', [\App\Http\Controllers\CommentController::class, 'store'])->name('comments.store');
     Route::get('/comments/{comment}/edit', [\App\Http\Controllers\CommentController::class, 'edit'])->name('comments.edit');
     Route::put('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');
 });
 
-// Rotas públicas de receitas individuais devem vir **depois** do create
+// Rotas públicas de receitas individuais devem vir depois das rotas protegidas
 Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])->name('recipes.show');
 
 require __DIR__.'/auth.php';
