@@ -57,3 +57,42 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+
+
+# Dependências do Projeto
+
+## PHP e Laravel
+- PHP >= 8.1
+- Laravel 10.x
+- Composer (para gerenciar pacotes PHP)
+
+## Banco de dados
+- MySQL ou MariaDB
+- Configuração no `.env`:
+- 
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+
+
+
+## Pacotes PHP adicionais
+- `stichoza/google-translate-php` → para tradução automática das receitas da API
+- `guzzlehttp/guzzle` → para requisições HTTP (consumir a API TheMealDB)
+
+## Frontend
+- TailwindCSS → estilização do projeto
+- Laravel Mix / Vite → compilação de assets
+
+## Autenticação
+- Laravel Breeze (ou outro scaffold de autenticação) instalado
+- Configuração de autenticação padrão do Laravel
+
+## Cache
+- Cache de arquivos habilitado (Laravel Cache) para armazenar respostas da API
+
