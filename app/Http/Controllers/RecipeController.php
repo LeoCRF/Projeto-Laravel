@@ -9,97 +9,77 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Stichoza\GoogleTranslate\GoogleTranslate;
-
-
 
 class RecipeController extends Controller
 {
-    
     public function index(Request $request)
-{
-    $query = Recipe::query();
+    {
+        $query = Recipe::query();
 
-    // busca por termo (título, descrição, ingredientes)
-    if ($request->filled('q')) {
-        $q = $request->get('q');
-        $query->where(function ($sub) use ($q) {
-            $sub->where('title', 'like', "%{$q}%")
-                ->orWhere('description', 'like', "%{$q}%")
-                ->orWhere('ingredients', 'like', "%{$q}%");
-        });
-    }
-
-    // filtrar só as minhas receitas
-    if ($request->get('mine') == 1 && Auth::check()) {
-        $query->where('user_id', Auth::id());
-    }
-
-    // Receitas do banco
-    $recipes = $query->latest()->paginate(6)->withQueryString();
-
-    // 🔥 API SEMPRE
-    $apiRecipes = Cache::remember('api_recipes_list', 60 * 24, function () {
-        try {
-            $response = Http::get('https://www.themealdb.com/api/json/v1/1/search.php?s=');
-
-            if ($response->successful() && $response->json()['meals']) {
-                $translate = new GoogleTranslate('pt');
-
-                return collect($response->json()['meals'])->map(function ($meal) use ($translate) {
-
-                    try {
-                        $title = $translate->translate($meal['strMeal']);
-                        $description = $translate->translate(substr($meal['strInstructions'], 0, 100));
-                        $category = $translate->translate($meal['strCategory']);
-                    } catch (\Exception $e) {
-                        $title = $meal['strMeal'];
-                        $description = substr($meal['strInstructions'], 0, 100);
-                        $category = $meal['strCategory'];
-                    }
-
-                    $ingredients = collect(range(1, 20))->map(function ($i) use ($meal) {
-                        $ingredient = $meal["strIngredient{$i}"] ?? '';
-                        $measure = $meal["strMeasure{$i}"] ?? '';
-                        return trim($ingredient) ? "{$measure} {$ingredient}" : null;
-                    })->filter()->implode(', ');
-
-                    return [
-                        'id' => $meal['idMeal'],
-                        'title' => $title,
-                        'description' => $description,
-                        'ingredients' => $ingredients,
-                        'instructions' => $meal['strInstructions'],
-                        'prep_time' => null,
-                        'difficulty' => null,
-                        'category' => $category,
-                        'sustainability_score' => null,
-                        'image' => $meal['strMealThumb'],
-                        'user_id' => null,
-                    ];
-                })->take(6);
-            }
-
-            return collect();
-        } catch (\Exception $e) {
-            Log::error('Erro ao buscar receitas da API: ' . $e->getMessage());
-            return collect();
+        // busca por termo (título, descrição, ingredientes)
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhere('ingredients', 'like', "%{$q}%");
+            });
         }
-    });
 
-    return view('recipes.index', compact('recipes', 'apiRecipes'));
-}
+        // filtrar só as minhas receitas
+        if ($request->get('mine') == 1 && Auth::check()) {
+            $query->where('user_id', Auth::id());
+        }
 
+        // Receitas do banco
+        $recipes = $query->latest()->paginate(6)->withQueryString();
 
+        // 🔥 API SEMPRE
+        $apiRecipes = Cache::remember('api_recipes_list', 60 * 24, function () {
+            try {
+                $response = Http::get('https://www.themealdb.com/api/json/v1/1/search.php?s=');
 
+                if ($response->successful() && $response->json()['meals']) {
 
-    
+                    return collect($response->json()['meals'])->map(function ($meal) {
+
+                        $ingredients = collect(range(1, 20))->map(function ($i) use ($meal) {
+                            $ingredient = $meal["strIngredient{$i}"] ?? '';
+                            $measure = $meal["strMeasure{$i}"] ?? '';
+                            return trim($ingredient) ? "{$measure} {$ingredient}" : null;
+                        })->filter()->implode(', ');
+
+                        return [
+                            'id' => $meal['idMeal'],
+                            'title' => $meal['strMeal'], // Mantém em inglês
+                            'description' => substr($meal['strInstructions'], 0, 100), // Mantém em inglês
+                            'ingredients' => $ingredients,
+                            'instructions' => $meal['strInstructions'],
+                            'prep_time' => null,
+                            'difficulty' => null,
+                            'category' => $meal['strCategory'], // Mantém em inglês
+                            'sustainability_score' => null,
+                            'image' => $meal['strMealThumb'],
+                            'user_id' => null,
+                        ];
+                    })->take(6);
+                }
+
+                return collect();
+            } catch (\Exception $e) {
+                Log::error('Erro ao buscar receitas da API: ' . $e->getMessage());
+                return collect();
+            }
+        });
+
+        return view('recipes.index', compact('recipes', 'apiRecipes'));
+    }
+
     public function create()
     {
         return view('recipes.create');
     }
 
-    
     public function store(Request $request)
     {
         $request->validate([
@@ -127,22 +107,19 @@ class RecipeController extends Controller
         return redirect()->route('recipes.index')->with('success', 'Receita criada com sucesso!');
     }
 
-    
     public function show(Recipe $recipe)
     {
         $comments = $recipe->comments()->latest()->get();
-        
-        // Buscar receitas recomendadas: mesma categoria, excluindo a receita atual
+
         $recommended = Recipe::where('category', $recipe->category)
             ->where('id', '!=', $recipe->id)
             ->latest()
             ->limit(4)
             ->get();
-        
+
         return view('recipes.show', compact('recipe', 'comments', 'recommended'));
     }
 
-    
     public function edit(Recipe $recipe)
     {
         if (Auth::id() !== $recipe->user_id) {
@@ -151,7 +128,6 @@ class RecipeController extends Controller
         return view('recipes.edit', compact('recipe'));
     }
 
-    
     public function update(Request $request, Recipe $recipe)
     {
         if (Auth::id() !== $recipe->user_id) {
@@ -185,7 +161,7 @@ class RecipeController extends Controller
 
         return redirect()->route('recipes.index')->with('success', 'Receita atualizada com sucesso!');
     }
-    
+
     public function destroy(Recipe $recipe)
     {
         if (Auth::id() !== $recipe->user_id) {

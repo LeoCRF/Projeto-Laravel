@@ -1,78 +1,157 @@
 @extends('layouts.app')
 
+@section('title', $recipe->title)
+
 @section('content')
-<div style="max-width: 900px; margin: 50px auto; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f5f5f5; padding: 30px; border-radius: 16px;">
+<div class="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md space-y-6">
 
-    {{-- Card principal da receita --}}
-    <div style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 12px 30px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s;">
-        
-        {{-- Imagem da receita --}}
-        @if(isset($recipe->image))
-            <img src="{{ $recipe->image }}" alt="{{ $recipe->title }}" style="width:100%; height:400px; object-fit: cover;">
+    {{-- Título e imagem --}}
+    <div class="text-center">
+        <h1 class="text-3xl font-bold mb-4">{{ $recipe->title }}</h1>
+        @if($recipe->image)
+            <img src="{{ asset('storage/' . $recipe->image) }}" alt="{{ $recipe->title }}" class="mx-auto rounded-lg shadow-md max-h-96 object-cover">
         @endif
-
-        <div style="padding: 30px;">
-            {{-- Título --}}
-            <h1 style="font-size: 2.2em; color: #333; margin-bottom: 15px; text-align: center;">{{ $recipe->title }}</h1>
-
-            {{-- Botões de ação --}}
-            <div style="display:flex; justify-content:center; gap: 15px; margin-bottom: 30px;">
-                <button style="padding:10px 20px; background-color:#FF6B6B; color:#fff; border:none; border-radius: 8px; cursor:pointer; font-weight:bold; transition: background 0.3s;" 
-                        onmouseover="this.style.background='#FF4C4C'" onmouseout="this.style.background='#FF6B6B'">
-                    ❤️ Curtir
-                </button>
-                <button style="padding:10px 20px; background-color:#1DD1A1; color:#fff; border:none; border-radius: 8px; cursor:pointer; font-weight:bold; transition: background 0.3s;"
-                        onmouseover="this.style.background='#10ac84'" onmouseout="this.style.background='#1DD1A1'">
-                    💾 Salvar
-                </button>
-            </div>
-
-            {{-- Ingredientes --}}
-            <div style="margin-bottom: 30px;">
-                <h2 style="font-size: 1.4em; color: #555; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 15px;">Ingredientes</h2>
-                @if(isset($recipe->ingredients) && is_array($recipe->ingredients))
-                    <ul style="list-style: none; padding-left: 0;">
-                        @foreach($recipe->ingredients as $ingredient)
-                            <li style="background: #f9f9f9; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; font-size: 1em; color: #444; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-                                {{ $ingredient }}
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p style="color: #999;">Nenhum ingrediente disponível.</p>
-                @endif
-            </div>
-
-            {{-- Modo de preparo --}}
-            <div style="margin-bottom: 30px;">
-                <h2 style="font-size: 1.4em; color: #555; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 15px;">Como Fazer</h2>
-                @if(isset($recipe->instructions) && is_array($recipe->instructions))
-                    <ol style="padding-left: 20px; line-height: 1.8; color: #444;">
-                        @foreach($recipe->instructions as $step)
-                            <li style="margin-bottom: 12px;">{{ $step }}</li>
-                        @endforeach
-                    </ol>
-                @else
-                    <p style="color: #999;">Instruções não disponíveis.</p>
-                @endif
-            </div>
-
-            {{-- Comentários --}}
-            <div>
-                <h2 style="font-size: 1.4em; color: #555; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 15px;">Comentários</h2>
-                @if(isset($comments) && count($comments) > 0)
-                    @foreach($comments as $comment)
-                        <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:10px; box-shadow: 0 1px 5px rgba(0,0,0,0.05);">
-                            <p style="font-weight:bold; color:#333;">{{ $comment->user->name ?? 'Anônimo' }}</p>
-                            <p style="color:#555;">{{ $comment->content }}</p>
-                        </div>
-                    @endforeach
-                @else
-                    <p style="color: #999;">Ainda não há comentários.</p>
-                @endif
-            </div>
-
-        </div>
+        @if($recipe->category)
+            <p class="text-emerald-500 font-semibold mt-2">{{ $recipe->category }}</p>
+        @endif
     </div>
+
+    {{-- Avaliação média --}}
+    <div class="flex items-center justify-center space-x-2">
+        @php
+            $comments = $recipe->comments ?? [];
+            $avgRating = count($comments) > 0 ? round(collect($comments)->avg('rating'), 1) : null;
+        @endphp
+
+        @if($avgRating)
+            <div class="flex items-center">
+                @for($i = 1; $i <= 5; $i++)
+                    <svg class="w-5 h-5 {{ $i <= round($avgRating) ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
+                    </svg>
+                @endfor
+                <span class="ml-2 text-gray-700 font-medium">({{ $avgRating }})</span>
+            </div>
+        @else
+            <span class="text-gray-500">Sem avaliações ainda</span>
+        @endif
+    </div>
+
+    {{-- Ingredientes --}}
+    <div>
+        <h2 class="text-2xl font-semibold mb-2">Ingredientes</h2>
+        <p class="text-gray-700">{{ $recipe->ingredients }}</p>
+    </div>
+
+    {{-- Modo de Preparo --}}
+    <div>
+        <h2 class="text-2xl font-semibold mb-2">Modo de preparo</h2>
+        <p class="text-gray-700">{{ $recipe->instructions }}</p>
+    </div>
+
+    {{-- Botões Editar/Excluir --}}
+    @auth
+        @if(Auth::id() === $recipe->user_id)
+            <div class="flex gap-2 mt-4">
+                <a href="{{ route('recipes.edit', $recipe->id) }}" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition">Editar</a>
+                <form action="{{ route('recipes.destroy', $recipe->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">Excluir</button>
+                </form>
+            </div>
+        @endif
+    @endauth
+
+    {{-- Comentários existentes --}}
+    <div>
+        <h2 class="text-2xl font-semibold mb-2">Comentários</h2>
+        @forelse($comments as $comment)
+            <div class="border p-4 rounded-md mb-2 bg-gray-50">
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">{{ $comment->user->name ?? 'Usuário' }}</span>
+                    @if($comment->rating)
+                        <div class="flex">
+                            @for($i = 1; $i <= 5; $i++)
+                                <svg class="w-4 h-4 {{ $i <= $comment->rating ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
+                                </svg>
+                            @endfor
+                        </div>
+                    @endif
+                </div>
+                <p class="mt-1 text-gray-700">{{ $comment->content }}</p>
+            </div>
+        @empty
+            <p class="text-gray-500">Nenhum comentário ainda.</p>
+        @endforelse
+    </div>
+
+    {{-- Formulário de comentário --}}
+    @auth
+        <div class="mt-4">
+            <h2 class="text-2xl font-semibold mb-2">Deixe seu comentário</h2>
+            <form action="{{ route('comments.store') }}" method="POST" class="space-y-4">
+                @csrf
+                <input type="hidden" name="recipe_id" value="{{ $recipe->id }}">
+
+                {{-- Estrelas interativas --}}
+                <div class="flex items-center gap-2">
+                    <span class="mr-2 font-semibold">Nota:</span>
+                    <div id="rating-stars" class="flex cursor-pointer">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg data-value="{{ $i }}" class="w-6 h-6 text-gray-300 hover:text-yellow-400 transition" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09L5.642 12 1 7.91l6.061-.88L10 2l2.939 5.03 6.061.88L14.358 12l1.52 6.09z"/>
+                            </svg>
+                        @endfor
+                    </div>
+                    <input type="hidden" name="rating" id="rating-input" value="">
+                </div>
+
+                {{-- Conteúdo do comentário --}}
+                <textarea name="content" rows="3" class="w-full border rounded-md p-2" placeholder="Escreva seu comentário"></textarea>
+
+                {{-- Botão --}}
+                <button type="submit" class="px-4 py-2 bg-yellow-400 text-white rounded-md hover:bg-yellow-500 transition">
+                    Enviar
+                </button>
+            </form>
+        </div>
+    @else
+        <p class="text-gray-500">Faça login para comentar e avaliar a receita.</p>
+    @endauth
 </div>
+
+{{-- Script das estrelas --}}
+<script>
+const stars = document.querySelectorAll('#rating-stars svg');
+const input = document.getElementById('rating-input');
+
+stars.forEach(star => {
+    star.addEventListener('mouseover', () => {
+        const value = parseInt(star.dataset.value);
+        highlightStars(value);
+    });
+    star.addEventListener('mouseout', () => {
+        highlightStars(parseInt(input.value) || 0);
+    });
+    star.addEventListener('click', () => {
+        const value = parseInt(star.dataset.value);
+        input.value = value;
+        highlightStars(value);
+    });
+});
+
+function highlightStars(value) {
+    stars.forEach(star => {
+        if (parseInt(star.dataset.value) <= value) {
+            star.classList.add('text-yellow-400');
+            star.classList.remove('text-gray-300');
+        } else {
+            star.classList.add('text-gray-300');
+            star.classList.remove('text-yellow-400');
+        }
+    });
+}
+</script>
 @endsection
